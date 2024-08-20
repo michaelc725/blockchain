@@ -1,5 +1,8 @@
 import com.google.gson.GsonBuilder;
 
+import java.sql.SQLOutput;
+import java.util.Base64;
+import java.security.Security;
 import java.util.ArrayList;
 
 
@@ -7,6 +10,9 @@ public class Chain {
 
     public static ArrayList<Block> blockchain = new ArrayList<Block>();
     public static int difficulty = 5;
+    public static Wallet walletA;
+    public static Wallet walletB;
+
 
     public static void main(String[] args) {
 
@@ -27,6 +33,29 @@ public class Chain {
         String blockchainJson = new GsonBuilder().setPrettyPrinting().create().toJson(blockchain);
         System.out.println("\nThe Block chain: ");
         System.out.println(blockchainJson);
+
+
+        // Setup Bouncey castle as a Security Provider
+        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        // Create new wallets
+        walletA = new Wallet();
+        walletB = new Wallet();
+        // Test public and private keys
+        System.out.println("Private and Public keys:");
+        System.out.println(StringUtil.getStringFromKey(walletA.privateKey));
+        System.out.println(StringUtil.getStringFromKey(walletA.publicKey));
+        // Create a test transaction from WalletA and WalletB
+        Transaction transaction = new Transaction(walletA.publicKey, walletB.publicKey, 5, null);
+        transaction.generateSignature(walletA.privateKey);
+        // Verify that the signature works and verify it from the public key
+        System.out.println("Is signature verified");
+        System.out.println(transaction.verifySignature());
+
+
+
+
+
+
 
     }
 
