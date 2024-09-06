@@ -50,4 +50,70 @@ public class Transaction
         return StringUtil.verifyECDSASig(sender, data, signature);
     }
 
+    public boolean processTransaction()
+    {
+        if(verifySignature() == false)
+        {
+            System.out.println("#Transaction Signature failed to verify");
+            return false;
+        }
+
+        //gather transaction inputs (Make sure they are unspent):
+        for(TransactionInput i : inputs)
+        {
+            i.UTXO = Chain.UTXOs.get(i.transactionOutputId);
+
+        }
+
+        //check if transaction is valid;
+        if(getInputsValue() < Chain.minimumTransaction)
+        {
+            System.out.println("#Transaction Signature failed to small: " + getInputsValue());
+            return false;
+        }
+
+        //generate transaction inputs
+        float leftOver = getInputsValue() - value; //get value inputs then the left over change:
+        transactionId = calculateHash();
+        outputs.add(new TransactionOutput( this.recipient, value, transactionId));
+        outputs.add(new TransactionOutput( this.sender, leftOver, transactionId));
+
+        //add outputs to Unspent list
+        for(TransactionOutput o : outputs)
+        {
+            Chain.UTXOs.put(o.id , o);
+        }
+
+        //remove transaction inputs from UTXO lists as spent:
+        for (TransactionInput i : inputs )
+        {
+            if(i.UTXO == null) continue; //if Transaction can't be found skip it
+            Chain.UTXOs.remove(i.UTXO.id);
+        }
+        return true;
+    }
+
+    //returns sum of inputs(UTXOs) values
+    public float getInputsValue()
+    {
+        float total = 0;
+        for(TransactionInput i : inputs)
+        {
+            if(i.UTXO == null) continue; //if Transaction can't be found skip it
+            total += i.UTXO.value;
+        }
+        return total;
+    }
+
+    //returns sum of outputs:
+    public float getOutputsValue()
+    {
+        float total = 0;
+        for(TransactionOutput o : outputs)
+        {
+            total += o.value;
+        }
+        return total;
+    }
+
 }
